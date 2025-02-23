@@ -1,10 +1,119 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <title></title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        form, #actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h2 id="registerHeader">Регистрация</h2>
+        <form id="registerForm">
+            <input type="text" id="registerUsername" placeholder="Логин" required>
+            <input type="password" id="registerPassword" placeholder="Пароль" required>
+            <button type="submit">Зарегистрироваться</button>
+        </form>
 
+        <h2 id="loginHeader" style="display:none;">Вход</h2>
+        <form id="loginForm" style="display:none;">
+            <input type="text" id="loginUsername" placeholder="Логин" required>
+            <input type="password" id="loginPassword" placeholder="Пароль" required>
+            <button type="submit">Войти</button>
+        </form>
+
+        <div id="actions" style="display:none;">
+            <button onclick="getHello()">Посмотреть приветствие</button>
+            <button onclick="getTime()">Посмотреть время</button>
+            <p id="response"></p>
+        </div>
+    </div>
+
+    <script>let sessionId = null;
+
+        document.getElementById("registerForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const username = document.getElementById("registerUsername").value;
+            const password = document.getElementById("registerPassword").value;
+            const response = await fetch("/register", {
+                method: "POST",
+                body: new URLSearchParams({ username, password })
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                document.getElementById("registerForm").style.display = "none";
+                document.getElementById("registerHeader").style.display = "none";
+                document.getElementById("loginForm").style.display = "block";
+                document.getElementById("loginHeader").style.display = "block";
+            } else {
+                alert(result.message || "Registration failed");
+            }
+        });
+
+        document.getElementById("loginForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const username = document.getElementById("loginUsername").value;
+            const password = document.getElementById("loginPassword").value;
+            const response = await fetch("/login", {
+                method: "POST",
+                body: new URLSearchParams({ username, password })
+            });
+            const result = await response.json();
+            if (result.success) {
+                sessionId = result.sessionId;
+                document.getElementById("loginForm").style.display = "none";
+                document.getElementById("loginHeader").style.display = "none";
+                document.getElementById("actions").style.display = "block";
+            } else {
+                alert(result.message || "Invalid credentials");
+            }
+        });
+
+        async function getHello() {
+            const response = await fetch("/hello", {
+                headers: { "Session-Id": sessionId }
+            });
+            const result = await response.json();
+            document.getElementById("response").innerText = result.message || result.message;
+        }
+
+        async function getTime() {
+            const response = await fetch("/time", {
+                headers: { "Session-Id": sessionId }
+            });
+            const result = await response.json();
+            document.getElementById("response").innerText = result.time || result.message;
+        }</script>
 </body>
 </html>
